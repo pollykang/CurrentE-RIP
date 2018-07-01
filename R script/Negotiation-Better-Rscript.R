@@ -1,4 +1,4 @@
-# Currrent emotions and inference
+#
 library(magrittr)
 if(!"devtools" %in% rownames(installed.packages())) install.packages("devtools")
 devtools::install_github("crsh/papaja")
@@ -7,20 +7,19 @@ devtools::install_github("crsh/papaja")
 #whole data (see how many failed)
 
 #load and select data
-data<- read.csv("Data/CurrentE-RIP6-25-18.csv", stringsAsFactors = F,
-                na.strings = '')[-c(1:5), ]%>%
-  dplyr::select(LabID, Video, dplyr::contains("AF"), dplyr::contains("AM"),dplyr::contains("AT"),dplyr::contains("sex"),age, exp) %>%
-  dplyr::mutate_at(dplyr::vars(-LabID,-Video), dplyr::funs(as.numeric)) %>%
-  dplyr::select(-dplyr::contains("Location"))
-#  dplyr::mutate(Target.Gender=ifelse())
-#6/25/18need create variables saying MALE/FEMALE, Nervous/neutral/anxious, 04/12/ 14/ 27 NEED TO CONTROL FOR PERSON EFFECTS/ GENDER. Actually see differences in emotion variable. 
-names(data)
-
+data<- read.csv("data/PilotBetter.csv", stringsAsFactors = F,
+                na.strings = '')[-c(1:11), ]%>%
+  dplyr::filter(Comp.Check==1) %>%
+  dplyr::select(Consent,Comp.Check, Role, dplyr::contains("Buyer"), dplyr::contains("Seller"),dplyr::contains("Better"),dplyr::contains("Counter"),dplyr::contains("continue"),dplyr::contains("emotion"),dplyr::contains("Enthusiastic"),dplyr::contains("Thoughts"),dplyr::contains("Likability"),dplyr::contains("Trust"),dplyr::contains("Closeness"),dplyr::contains("Sex"),Educ, Age, Exper) %>%
+  dplyr::mutate_at(dplyr::vars(-Why.continue), dplyr::funs(as.numeric))
+str(data)
+sum(data$Comp.Check, na.rm = TRUE) #180
+sum(data$Consent, na.rm = TRUE)
+###########################################SAMPLE CODE#############################
 #make data long
 #Code for PhotoType: Gender, Emotion, Activation, Valence
 
 long.data <- data %>%
-  
   tidyr::gather(PhotoType, Estimate, AF.04.AFS.valence:AM.27.NES.activation)%>%
   tidyr::separate(PhotoType, c("Target.Gender", "Target.ID","Target.Emotion", "Dimension.Eval"))%>% #Split Columnname into factors
   dplyr::mutate_at(dplyr::vars(Video, dplyr::contains("Target"), Dimension.Eval),dplyr::funs(as.factor))
@@ -215,30 +214,6 @@ valence.long.data %>%
                      position = ggplot2::position_dodge(width = 3),
                      size = 3, color = 'black') +
   papaja::theme_apa() 
-
-valence.long.data %>% 
-  dplyr::group_by(Video,Target.Emotion,Target.Gender) %>%
-  dplyr::summarize(mean = mean(Estimate),
-                   sd=sd(Estimate,na.rm = T),
-                   se = sd/sqrt(n()),
-                   n=n()) %>% 
-  ggplot2::ggplot(., ggplot2::aes(x = Video, y = mean,fill=Video)) + #fill=what variable you want to vary the fill by
-  ggplot2::guides(fill=FALSE) + #gets rid of legend +
-  ggplot2::scale_fill_discrete(breaks=c("NES","AFS","ANS")) +
-  ggplot2::geom_bar(position = 'dodge', stat = 'identity') +
-  ggplot2::geom_errorbar(ggplot2::aes(ymin=mean-se, ymax=mean+se),width=.1,position=ggplot2::position_dodge(.9))+
-  ggplot2::facet_grid(Target.Gender~ Target.Emotion) + #positioning of the boxes
-  ggplot2::geom_text(ggplot2::aes(label=round(mean,2), y = 5, x = Video), #how do I get the labels? David
-                     position=ggplot2::position_dodge(width = 3),
-                     size= 3.5) +
-  ggplot2::geom_text(ggplot2::aes(label = paste("n =", n), y = 2, x = Video), #added n text to the graph
-                     position = ggplot2::position_dodge(width = 3),
-                     size = 3, color = 'black') +
-  papaja::theme_apa() 
-
-
-
-
 
 activation.long.data %>% 
   dplyr::group_by(Video,Target.Emotion,Target.Gender) %>%
